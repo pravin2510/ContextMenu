@@ -1,0 +1,164 @@
+<!doctype html>
+<html ng-app="contextMenuApp">
+<head>
+<script src="angular.js"></script>
+
+<link rel="stylesheet" 
+href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+</head>
+<body>
+	
+	<div ng-controller="ContextController as vm">
+		<ul>
+			<li ng-repeat="item in items"  data-ng-context-menu options="{{item.options}}" my-alert='myAlert' >{{item.label}}</li>
+			
+		</ul>
+	</div>
+	
+	
+	<script>
+		angular.module('contextMenuApp', [])
+				.directive("ngContextMenu",function() {
+					
+					var lnkFn = function(scope, element, attrs) {
+								element.on('contextmenu', function(event) {
+									scope.$apply(function() {
+										event.preventDefault();
+										var options = scope
+												.$eval(scope.options);
+										console.log(options);
+										if (options instanceof Object) {
+											renderContextMenu(scope, event,
+													options);
+										} else {
+										throw '"' + scope.options+ '" not an array';
+										}
+									});
+									
+								});
+
+								var renderContextMenu = function(scope, event,options) {
+									if (!$) {
+										var $ = angular.element;
+									}
+									$(event.currentTarget).addClass('context dropdown');
+									var $contextMenu = $('<div>');
+									$contextMenu.addClass('dropdown clearfix');
+									var $ul = $('<ul>');
+									$ul.addClass('dropdown-menu');
+									$ul.attr({'role' : 'menu'});
+									$ul.css({
+												display : 'block',
+												position : 'absolute',
+												left : event.pageX + 'px',
+												top : event.pageY + 'px'
+											});
+
+									angular.forEach(options,function(value, key) {
+												console.log('build');
+												
+												buildMenuItem($, scope, $ul,value, key);
+											
+									});
+									
+
+									$contextMenu.append($ul);
+									$contextMenu.css({
+										width : '50%',
+										height : '50%',
+										position : 'absolute',
+										top : 0,
+										left : 0,
+										zIndex : 9999
+									});
+									
+									
+									$(document).find('body').append($contextMenu);
+									$contextMenu.on("click",function(e) {$(event.currentTarget)
+									.removeClass('context');
+									$contextMenu.remove();
+									})
+									.on('contextmenu',function(event) {
+													$(event.currentTarget)
+													.removeClass('context');
+													event.preventDefault();
+													$contextMenu.remove();
+													});
+									
+									
+								};
+
+								var buildMenuItem = function($, scope, list,itemvalue, itemkey) {
+									var $li = $('<li>');
+									if (itemvalue === null) {$li.addClass
+										('divider');
+									} else if (itemvalue instanceof Array) {
+										$li.addClass("dropdown-submenu");
+										var $subMenu = $('<ul class="dropdown-menu">');
+
+										itemvalue[1].forEach(function(subItem,x) {
+											buildMenuItem($, scope, $subMenu,subItem);
+										});
+
+										$a = $('<a>');
+										$a.text(itemvalue);
+										$li.append($a);
+										$li.append($subMenu);
+									} 
+									else 
+									{
+										$a = $('<a>');
+										$a.attr({tabindex : '',href : '#' + itemkey
+										});
+										$a.text(itemvalue);
+										$li.append($a);
+										var myAlert = scope.method();
+										$li.on('click', function() {
+											myAlert(itemvalue );
+										});
+									}
+									list.append($li);
+									element.on('mouseleave', function (event) {
+										console.log("mouse left");
+		         	  			 });
+											
+									
+								};
+
+							};
+
+							return {
+								restrict : "A",scope : {
+									options : '@',
+									method:'&myAlert'
+								},
+									link : lnkFn
+							};
+						
+							
+							
+						})
+						
+						
+					.controller('ContextController', [ '$scope', function($scope) {
+						
+						$scope.myAlert = function(text) { 
+							  alert(text);
+						      console.log(text); 
+						  };
+						  
+						
+						
+						$scope.items = [{
+							label: 'Menu1'	, options:['aa', 'bb', 'cc']
+						},{
+							label: 'Menu2'	, options:['@@', '!!', '##']
+						},{
+							label: 'Menu3'	, options:['11', '22', '33']
+						}];
+						
+					}]);
+		
+	</script>
+	</body>
+</html>
